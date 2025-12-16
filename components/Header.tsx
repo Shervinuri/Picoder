@@ -18,7 +18,7 @@ const Header: React.FC = () => {
                 PICoder
                 <span className="align-top text-xs font-normal text-zinc-500 ml-1 tracking-widest">PRO</span>
               </h1>
-              <p className="text-xs text-zinc-500 font-mono tracking-[0.2em] uppercase">Visual Encoder Unit</p>
+              <p className="text-xs text-zinc-500 font-mono tracking-[0.2em] uppercase">First Creative Serverless Image Uploader</p>
             </div>
           </div>
           

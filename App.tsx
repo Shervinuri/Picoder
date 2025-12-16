@@ -135,10 +135,12 @@ const App: React.FC = () => {
               onClear={() => { setFile(null); setProcessedImage(null); }} 
             />
 
-            {/* AI Prompt Bar - Only shows if image is loaded */}
-            {processedImage && (
-              <AIPromptBar onGenerate={handleAiEdit} isProcessing={isAiProcessing} />
-            )}
+            {/* AI Prompt Bar - Always Visible */}
+            <AIPromptBar 
+              onGenerate={handleAiEdit} 
+              isProcessing={isAiProcessing} 
+              hasImage={!!processedImage} 
+            />
 
             {!processedImage && (
               <button 

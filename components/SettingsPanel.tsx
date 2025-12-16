@@ -13,7 +13,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onChange }) => 
       {/* Decorative Shine */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 blur-[100px] rounded-full pointer-events-none -mr-32 -mt-32"></div>
 
-      <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/5 relative z-10">
+      {/* Centered Title */}
+      <div className="flex items-center justify-center gap-3 mb-8 pb-4 border-b border-white/5 relative z-10">
         <div className="p-2 bg-zinc-800 rounded-lg">
           <Settings2 size={18} className="text-zinc-300" />
         </div>
