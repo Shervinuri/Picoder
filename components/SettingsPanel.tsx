@@ -1,148 +1,213 @@
 import React from 'react';
-import { Settings2, RotateCcw, RotateCw, ArrowLeftRight, ArrowUpDown, Square, Circle, LayoutTemplate } from 'lucide-react';
+import { Settings2, RotateCcw, RotateCw, ArrowLeftRight, ArrowUpDown, Square, Circle, LayoutTemplate, Undo2, Redo2, MousePointer2 } from 'lucide-react';
 import { ImageSettings, MaskType } from '../types';
 
 interface SettingsPanelProps {
   settings: ImageSettings;
-  onChange: (newSettings: Partial<ImageSettings>) => void;
+  onChange: (newSettings: Partial<ImageSettings>, commit?: boolean) => void;
+  onCommit: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
-const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onChange }) => {
-  return (
-    <div className="bg-zinc-900/40 border border-white/5 rounded-[2rem] p-6 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-      {/* Decorative Shine */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 blur-[100px] rounded-full pointer-events-none -mr-32 -mt-32"></div>
+const SettingsPanel: React.FC<SettingsPanelProps> = ({ 
+  settings, 
+  onChange, 
+  onCommit, 
+  onUndo, 
+  onRedo, 
+  canUndo, 
+  canRedo 
+}) => {
+  
+  const handleChange = (newSettings: Partial<ImageSettings>, commit = false) => {
+    onChange(newSettings, commit);
+  };
 
-      {/* Centered Title */}
-      <div className="flex items-center justify-center gap-3 mb-8 pb-4 border-b border-white/5 relative z-10">
-        <div className="p-2 bg-zinc-800 rounded-lg">
-          <Settings2 size={18} className="text-zinc-300" />
+  return (
+    <div className="bg-[#0f0f12] border border-zinc-800 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden">
+      
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-zinc-800">
+        <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-zinc-900 border border-zinc-700 rounded-xl shadow-inner">
+              <Settings2 size={20} className="text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white text-lg tracking-tight">Studio Controls</h3>
+              <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Fine Tune</p>
+            </div>
         </div>
-        <h3 className="font-bold text-zinc-200 tracking-wide">Configuration</h3>
+        
+        {/* Undo / Redo - Explicitly labeled for clarity */}
+        <div className="flex items-center gap-2 bg-zinc-900/50 p-1.5 rounded-xl border border-zinc-800">
+            <button
+                onClick={onUndo}
+                disabled={!canUndo}
+                className={`p-2.5 rounded-lg transition-all flex items-center justify-center relative group
+                    ${canUndo 
+                        ? 'bg-zinc-800 text-white hover:bg-zinc-700 hover:border-zinc-600 border border-transparent shadow-lg' 
+                        : 'text-zinc-600 cursor-not-allowed opacity-50'}`}
+                title="Undo (Ctrl+Z)"
+            >
+                <Undo2 size={18} />
+                {canUndo && <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full"></span>}
+            </button>
+            
+            <div className="w-px h-6 bg-zinc-800"></div>
+
+            <button
+                onClick={onRedo}
+                disabled={!canRedo}
+                className={`p-2.5 rounded-lg transition-all flex items-center justify-center relative group
+                    ${canRedo 
+                        ? 'bg-zinc-800 text-white hover:bg-zinc-700 hover:border-zinc-600 border border-transparent shadow-lg' 
+                        : 'text-zinc-600 cursor-not-allowed opacity-50'}`}
+                title="Redo (Ctrl+Y)"
+            >
+                <Redo2 size={18} />
+                {canRedo && <span className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-500 rounded-full"></span>}
+            </button>
+        </div>
       </div>
       
-      <div className="space-y-8 relative z-10">
+      <div className="space-y-8">
         
-        {/* Transform & Masking Row */}
+        {/* Transform & Shape Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* Transformation Controls */}
+          {/* Transform */}
           <div className="space-y-3">
-             <label className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Transform</label>
-             <div className="grid grid-cols-4 gap-2 bg-black/40 p-2 rounded-xl border border-white/5">
-                {/* Rotate Left */}
+             <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+               <RotateCw size={12} /> Transform
+             </label>
+             <div className="grid grid-cols-4 gap-2">
                 <button
-                  onClick={() => onChange({ rotation: settings.rotation - 90 })}
-                  className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-all flex flex-col items-center justify-center gap-1"
-                  title="Rotate Left 90°"
+                  onClick={() => handleChange({ rotation: settings.rotation - 90 }, true)}
+                  className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white p-3 rounded-xl transition-all flex justify-center"
+                  title="Rotate Left"
                 >
-                  <RotateCcw size={16} />
-                  <span className="text-[10px] hidden xl:block">Left</span>
+                  <RotateCcw size={18} />
                 </button>
-
-                {/* Rotate Right */}
                 <button
-                  onClick={() => onChange({ rotation: settings.rotation + 90 })}
-                  className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-all flex flex-col items-center justify-center gap-1"
-                  title="Rotate Right 90°"
+                  onClick={() => handleChange({ rotation: settings.rotation + 90 }, true)}
+                  className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white p-3 rounded-xl transition-all flex justify-center"
+                  title="Rotate Right"
                 >
-                  <RotateCw size={16} />
-                  <span className="text-[10px] hidden xl:block">Right</span>
+                  <RotateCw size={18} />
                 </button>
-
-                {/* Flip Horizontal */}
                 <button
-                  onClick={() => onChange({ flipH: !settings.flipH })}
-                  className={`p-2 rounded-lg transition-all flex flex-col items-center justify-center gap-1
-                    ${settings.flipH ? 'bg-zinc-700 text-emerald-400 shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`}
-                  title="Mirror Horizontal"
+                  onClick={() => handleChange({ flipH: !settings.flipH }, true)}
+                  className={`border p-3 rounded-xl transition-all flex justify-center
+                    ${settings.flipH ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'}`}
+                  title="Flip H"
                 >
-                  <ArrowLeftRight size={16} />
-                  <span className="text-[10px] hidden xl:block">Flip H</span>
+                  <ArrowLeftRight size={18} />
                 </button>
-
-                {/* Flip Vertical */}
                 <button
-                  onClick={() => onChange({ flipV: !settings.flipV })}
-                  className={`p-2 rounded-lg transition-all flex flex-col items-center justify-center gap-1
-                    ${settings.flipV ? 'bg-zinc-700 text-emerald-400 shadow-inner' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`}
-                  title="Mirror Vertical"
+                  onClick={() => handleChange({ flipV: !settings.flipV }, true)}
+                  className={`border p-3 rounded-xl transition-all flex justify-center
+                    ${settings.flipV ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'}`}
+                  title="Flip V"
                 >
-                  <ArrowUpDown size={16} />
-                  <span className="text-[10px] hidden xl:block">Flip V</span>
+                  <ArrowUpDown size={18} />
                 </button>
              </div>
           </div>
 
-          {/* Masking */}
+          {/* Mask Shape */}
           <div className="space-y-3">
-             <label className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Shape / Crop</label>
-             <div className="flex bg-black/40 p-1.5 rounded-xl border border-white/5 h-[58px] items-center">
+             <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+               <LayoutTemplate size={12} /> Crop Shape
+             </label>
+             <div className="flex bg-zinc-900 p-1 rounded-xl border border-zinc-800">
                 {[
                   { id: 'none', icon: Square, label: 'Full' },
                   { id: 'circle', icon: Circle, label: 'Circle' },
-                  { id: 'rounded', icon: LayoutTemplate, label: 'Round' }
+                  { id: 'rounded', icon: LayoutTemplate, label: 'Box' }
                 ].map((m) => (
                   <button
                     key={m.id}
-                    onClick={() => onChange({ mask: m.id as MaskType })}
-                    className={`flex-1 py-3 rounded-lg text-xs font-medium transition-all duration-300 flex items-center justify-center gap-2
+                    onClick={() => handleChange({ mask: m.id as MaskType }, true)}
+                    className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2
                       ${settings.mask === m.id 
-                        ? 'bg-zinc-700 text-white shadow-lg' 
-                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}
+                        ? 'bg-zinc-800 text-white shadow-lg border border-zinc-700' 
+                        : 'text-zinc-500 hover:text-zinc-300'}`}
                   >
                     <m.icon size={14} />
-                    <span className="hidden sm:inline">{m.label}</span>
+                    <span>{m.label}</span>
                   </button>
                 ))}
              </div>
           </div>
         </div>
 
-        {/* Dynamic Rounded Radius Slider (Only if rounded) */}
-        {settings.mask === 'rounded' && (
-          <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-             <div className="flex justify-between text-xs text-zinc-400 font-mono">
-               <span>Corner Radius</span>
-               <span>{settings.borderRadius}%</span>
-             </div>
-             <input 
-               type="range" min="0" max="100" 
-               value={settings.borderRadius} 
-               onChange={(e) => onChange({ borderRadius: parseInt(e.target.value) })}
-               className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-zinc-200 hover:accent-white"
-             />
-          </div>
+        {/* Dynamic Controls */}
+        {settings.mask !== 'none' && (
+           <div className="p-5 bg-gradient-to-b from-zinc-900 to-zinc-900/50 rounded-2xl border border-zinc-800/50 space-y-4 animate-in fade-in slide-in-from-top-2">
+              
+              <div className="flex items-center gap-3 text-emerald-400 mb-2">
+                 <MousePointer2 size={16} className="animate-bounce" />
+                 <span className="text-xs font-bold tracking-wide">INTERACTIVE MODE ACTIVE</span>
+              </div>
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                 Drag the box on the image to move. Drag the corner handle to resize.
+              </p>
+
+              {settings.mask === 'rounded' && (
+                <div className="space-y-3 pt-2">
+                   <div className="flex justify-between text-xs font-bold text-zinc-300">
+                     <span>Corner Radius</span>
+                     <span>{settings.borderRadius}%</span>
+                   </div>
+                   <input 
+                     type="range" min="0" max="100" 
+                     value={settings.borderRadius} 
+                     onChange={(e) => handleChange({ borderRadius: parseInt(e.target.value) })}
+                     onMouseUp={onCommit}
+                     onTouchEnd={onCommit}
+                     className="w-full h-2 bg-black rounded-full appearance-none cursor-pointer accent-emerald-500"
+                   />
+                </div>
+              )}
+           </div>
         )}
 
-        {/* Quality & Width */}
-        <div className="space-y-6 pt-4 border-t border-white/5">
-          <div className="group">
-            <label className="flex justify-between text-xs text-zinc-500 mb-3 font-mono uppercase tracking-widest">
-              <span>Compression (Quality)</span>
-              <span className="text-zinc-300">{Math.round(settings.quality * 100)}%</span>
+        {/* Global Settings */}
+        <div className="space-y-6 pt-6 border-t border-zinc-800">
+          <div className="space-y-3">
+            <label className="flex justify-between text-xs font-bold text-zinc-400 uppercase tracking-wider">
+              <span>Quality / Compression</span>
+              <span className="text-white bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">{Math.round(settings.quality * 100)}%</span>
             </label>
             <input 
               type="range" min="0.1" max="1" step="0.05" 
               value={settings.quality} 
-              onChange={(e) => onChange({ quality: parseFloat(e.target.value) })}
-              className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-zinc-200 hover:accent-white transition-all"
+              onChange={(e) => handleChange({ quality: parseFloat(e.target.value) })}
+              onMouseUp={onCommit}
+              onTouchEnd={onCommit}
+              className="w-full h-2 bg-black rounded-full appearance-none cursor-pointer accent-white hover:accent-emerald-400 transition-colors"
             />
           </div>
 
-          <div className="group">
-            <label className="flex justify-between text-xs text-zinc-500 mb-3 font-mono uppercase tracking-widest">
+          <div className="space-y-3">
+            <label className="flex justify-between text-xs font-bold text-zinc-400 uppercase tracking-wider">
               <span>Max Width</span>
-              <span className="text-zinc-300">{settings.maxWidth}px</span>
+              <span className="text-white bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">{settings.maxWidth}px</span>
             </label>
             <input 
               type="range" min="100" max="1920" step="50" 
               value={settings.maxWidth} 
-              onChange={(e) => onChange({ maxWidth: parseInt(e.target.value) })}
-              className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-zinc-200 hover:accent-white transition-all"
+              onChange={(e) => handleChange({ maxWidth: parseInt(e.target.value) })}
+              onMouseUp={onCommit}
+              onTouchEnd={onCommit}
+              className="w-full h-2 bg-black rounded-full appearance-none cursor-pointer accent-white hover:accent-cyan-400 transition-colors"
             />
           </div>
         </div>
+
       </div>
     </div>
   );

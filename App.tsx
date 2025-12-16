@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'lucide-react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -6,7 +6,7 @@ import DropZone from './components/DropZone';
 import SettingsPanel from './components/SettingsPanel';
 import ResultViewer from './components/ResultViewer';
 import AIPromptBar from './components/AIPromptBar';
-import { ImageSettings, ProcessedImage } from './types';
+import { ImageSettings, ProcessedImage, HistoryItem } from './types';
 import { processImage, calculateBase64Size } from './utils/imageUtils';
 import { editImageWithGemini } from './utils/geminiService';
 
@@ -15,6 +15,13 @@ const App: React.FC = () => {
   const [processedImage, setProcessedImage] = useState<ProcessedImage | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
+  
+  // History State
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const savePending = useRef(false);
+  const isRestoringHistory = useRef(false);
+
   const [settings, setSettings] = useState<ImageSettings>({
     quality: 0.8,
     maxWidth: 800,
@@ -23,8 +30,79 @@ const App: React.FC = () => {
     flipH: false,
     flipV: false,
     mask: 'none',
-    borderRadius: 20
+    borderRadius: 20,
+    maskZoom: 1,
+    maskX: 0,
+    maskY: 0
   });
+
+  // Save to history logic
+  const saveToHistory = useCallback(() => {
+    if (isRestoringHistory.current) return;
+    
+    setHistory(prev => {
+      const currentHistory = prev.slice(0, historyIndex + 1);
+      const newState: HistoryItem = {
+        processedImage: processedImage,
+        settings: { ...settings },
+        file: file
+      };
+
+      if (currentHistory.length > 0) {
+        const lastState = currentHistory[currentHistory.length - 1];
+        if (
+          lastState.processedImage?.base64 === newState.processedImage?.base64 &&
+          JSON.stringify(lastState.settings) === JSON.stringify(newState.settings) &&
+          lastState.file === newState.file
+        ) {
+          return prev;
+        }
+      }
+
+      const newHistory = [...currentHistory, newState];
+      if (newHistory.length > 20) newHistory.shift();
+      return newHistory;
+    });
+
+    setHistoryIndex(prev => {
+      return prev < 19 ? prev + 1 : 19;
+    });
+  }, [processedImage, settings, file, historyIndex]);
+
+  useEffect(() => {
+    if (savePending.current && processedImage && !isLoading) {
+      saveToHistory();
+      savePending.current = false;
+    }
+  }, [processedImage, isLoading, saveToHistory]);
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      isRestoringHistory.current = true;
+      const prevIndex = historyIndex - 1;
+      const prevState = history[prevIndex];
+      
+      setFile(prevState.file);
+      setSettings(prevState.settings);
+      setProcessedImage(prevState.processedImage);
+      setHistoryIndex(prevIndex);
+      setTimeout(() => { isRestoringHistory.current = false; }, 50);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      isRestoringHistory.current = true;
+      const nextIndex = historyIndex + 1;
+      const nextState = history[nextIndex];
+      
+      setFile(nextState.file);
+      setSettings(nextState.settings);
+      setProcessedImage(nextState.processedImage);
+      setHistoryIndex(nextIndex);
+      setTimeout(() => { isRestoringHistory.current = false; }, 50);
+    }
+  };
 
   const updateProcessedImageState = async (base64: string, filename: string, originalSize: number) => {
       const img = new Image();
@@ -59,14 +137,9 @@ const App: React.FC = () => {
     if (!processedImage) return;
     setIsAiProcessing(true);
     try {
-      // Use the current processed image as the base for the edit
       const newBase64 = await editImageWithGemini(processedImage.base64, prompt);
-      
-      // Update state with the new AI generated image
-      // Note: We keep original size metric as the very first file size for reference, 
-      // or we could treat the previous step as original. Let's keep the initial file size.
       await updateProcessedImageState(newBase64, `ai-edited-${Date.now()}.png`, processedImage.originalSize);
-      
+      setTimeout(() => { savePending.current = true; }, 0);
     } catch (error) {
       alert("AI Processing Failed: " + (error as Error).message);
     } finally {
@@ -76,15 +149,36 @@ const App: React.FC = () => {
 
   const onFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
-    handleProcessing(selectedFile, settings);
+    setHistory([]);
+    setHistoryIndex(-1);
+    const resetSettings = { ...settings, maskX: 0, maskY: 0, maskZoom: 1 };
+    setSettings(resetSettings);
+    
+    handleProcessing(selectedFile, resetSettings).then(() => {
+       savePending.current = true;
+    });
   };
 
-  const onSettingsChange = (newSettings: Partial<ImageSettings>) => {
+  const onSettingsChange = (newSettings: Partial<ImageSettings>, commit = false) => {
     const updatedSettings = { ...settings, ...newSettings };
     setSettings(updatedSettings);
+    
+    if (commit) {
+        savePending.current = true;
+    }
+    
+    // Debounce processing slightly if dragging continuously, but for now direct call
     if (file) {
       handleProcessing(file, updatedSettings); 
     }
+  };
+  
+  const onSettingsCommit = () => {
+      savePending.current = true;
+      if (!isLoading && processedImage) {
+          saveToHistory();
+          savePending.current = false;
+      }
   };
 
   const handleUrlInput = async () => {
@@ -98,8 +192,7 @@ const App: React.FC = () => {
       const blob = await response.blob();
       const filename = url.split('/').pop() || 'downloaded-image';
       const fileObj = new File([blob], filename, { type: blob.type });
-      setFile(fileObj);
-      handleProcessing(fileObj, settings);
+      onFileSelect(fileObj);
     } catch (error) {
       alert("Failed to fetch image. CORS might be blocking this request.");
     } finally {
@@ -108,18 +201,18 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen font-sans relative overflow-x-hidden selection:bg-white/20" dir="rtl">
+    <div className="min-h-screen font-sans relative overflow-x-hidden selection:bg-emerald-500/30" dir="rtl">
       
       {/* Dynamic Background Image Effect */}
       {processedImage && (
         <div className="fixed inset-0 z-0">
-           <img src={processedImage.previewUrl} className="w-full h-full object-cover opacity-10 blur-[100px] scale-110 transform transition-all duration-1000" />
-           <div className="absolute inset-0 bg-zinc-950/80"></div>
+           <img src={processedImage.previewUrl} className="w-full h-full object-cover opacity-5 blur-[120px] scale-110" />
+           <div className="absolute inset-0 bg-[#050505]/90 mix-blend-multiply"></div>
         </div>
       )}
 
       {/* Grid Overlay */}
-      <div className="fixed inset-0 z-0 opacity-20 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+      <div className="fixed inset-0 z-0 opacity-[0.15] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       
       <div className="relative z-10 p-4 md:p-8">
         <Header />
@@ -127,15 +220,16 @@ const App: React.FC = () => {
         <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Left Column: Input & Settings (5 cols) */}
-          <div className="lg:col-span-5 space-y-6 flex flex-col">
+          <div className="lg:col-span-5 space-y-8 flex flex-col">
             <DropZone 
               file={processedImage} 
               isLoading={isLoading} 
+              settings={settings}
               onFileSelect={onFileSelect} 
-              onClear={() => { setFile(null); setProcessedImage(null); }} 
+              onClear={() => { setFile(null); setProcessedImage(null); setHistory([]); setHistoryIndex(-1); }}
+              onUpdateSettings={onSettingsChange}
             />
 
-            {/* AI Prompt Bar - Always Visible */}
             <AIPromptBar 
               onGenerate={handleAiEdit} 
               isProcessing={isAiProcessing} 
@@ -145,14 +239,22 @@ const App: React.FC = () => {
             {!processedImage && (
               <button 
                 onClick={handleUrlInput}
-                className="w-full py-4 bg-zinc-900/40 hover:bg-zinc-800/60 rounded-2xl flex items-center justify-center gap-3 transition-all border border-zinc-800 text-zinc-400 hover:text-white group backdrop-blur-sm shadow-lg"
+                className="w-full py-4 bg-zinc-900/50 hover:bg-zinc-800 rounded-2xl flex items-center justify-center gap-3 transition-all border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white group backdrop-blur-sm"
               >
                 <Link size={18} className="group-hover:rotate-45 transition-transform" />
-                <span className="font-medium text-sm">Import from URL</span>
+                <span className="font-bold text-sm">Import from URL</span>
               </button>
             )}
 
-            <SettingsPanel settings={settings} onChange={onSettingsChange} />
+            <SettingsPanel 
+                settings={settings} 
+                onChange={onSettingsChange}
+                onCommit={onSettingsCommit}
+                onUndo={undo}
+                onRedo={redo}
+                canUndo={historyIndex > 0}
+                canRedo={historyIndex < history.length - 1}
+            />
           </div>
 
           {/* Right Column: Result (7 cols) */}

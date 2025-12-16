@@ -95,9 +95,9 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ processedImage }) => {
 
   if (!processedImage) {
     return (
-      <div className="bg-zinc-900/20 border border-zinc-800/50 border-dashed rounded-[2rem] p-6 h-full min-h-[400px] flex flex-col items-center justify-center text-zinc-600 space-y-4 backdrop-blur-sm">
-        <div className="p-8 bg-zinc-900/50 rounded-full border border-zinc-800 shadow-inner">
-           <Code size={40} className="opacity-40" />
+      <div className="bg-zinc-900/20 border border-zinc-800/50 border-dashed rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 h-full min-h-[300px] md:min-h-[400px] flex flex-col items-center justify-center text-zinc-600 space-y-4 backdrop-blur-sm">
+        <div className="p-6 md:p-8 bg-zinc-900/50 rounded-full border border-zinc-800 shadow-inner">
+           <Code className="w-8 h-8 md:w-10 md:h-10 opacity-40" />
         </div>
         <p className="font-mono text-xs uppercase tracking-widest opacity-60">Awaiting Input Signal...</p>
       </div>
@@ -106,7 +106,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ processedImage }) => {
 
   return (
     <>
-      <div className="bg-zinc-900/60 border border-white/10 rounded-[2rem] p-6 h-full flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl relative overflow-hidden">
+      <div className="bg-zinc-900/60 border border-white/10 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 h-full flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl relative overflow-hidden">
         
         {/* Full Screen Toggle */}
         <button 
@@ -118,7 +118,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ processedImage }) => {
         </button>
 
         {/* Stats Bar */}
-        <div className="flex justify-between items-center mb-6 bg-black/40 p-3 rounded-2xl border border-white/5">
+        <div className="flex justify-between items-center mb-4 md:mb-6 bg-black/40 p-3 rounded-2xl border border-white/5">
           <div className="flex items-center gap-3">
             <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse"></div>
             <div className="flex flex-col">
@@ -151,7 +151,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ processedImage }) => {
         </div>
 
         {/* Editor */}
-        <div className="relative flex-1 bg-[#0c0c0e] rounded-xl border border-white/5 p-4 overflow-hidden group shadow-inner">
+        <div className="relative flex-1 bg-[#0c0c0e] rounded-xl border border-white/5 p-4 overflow-hidden group shadow-inner min-h-[200px]">
           <textarea 
             className="w-full h-full bg-transparent text-zinc-400 font-mono text-[10px] resize-none focus:outline-none leading-relaxed custom-scrollbar selection:bg-zinc-700"
             readOnly
@@ -162,10 +162,10 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ processedImage }) => {
         </div>
 
         {/* Actions */}
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3">
           <button 
             onClick={downloadContent}
-            className="col-span-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-white/5"
+            className="col-span-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-white/5 active:scale-95"
           >
             <Download size={16} />
             <span className="hidden sm:inline">Save</span>
@@ -174,7 +174,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ processedImage }) => {
           {/* Share Button (Primary on mobile if clipboard slow) */}
           <button 
             onClick={handleShare}
-            className="col-span-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-white/5"
+            className="col-span-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-white/5 active:scale-95"
           >
              <Share2 size={16} />
              <span className="hidden sm:inline">Share</span>
@@ -182,7 +182,7 @@ const ResultViewer: React.FC<ResultViewerProps> = ({ processedImage }) => {
           
           <button 
             onClick={copyToClipboard}
-            className={`col-span-2 sm:col-span-1 py-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg
+            className={`col-span-2 sm:col-span-1 py-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95
                 ${copied 
                     ? 'bg-emerald-600 text-white shadow-emerald-900/50' 
                     : 'bg-zinc-100 hover:bg-white text-black shadow-white/10'}`}

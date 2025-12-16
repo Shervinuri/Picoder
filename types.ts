@@ -10,6 +10,9 @@ export interface ImageSettings {
   flipV: boolean;   // Vertical Mirror
   mask: MaskType;
   borderRadius: number; // 0-100 (percentage relative to size)
+  maskZoom: number; // 0.1 - 2.0 (Scale of the mask hole)
+  maskX: number; // Horizontal offset of the mask
+  maskY: number; // Vertical offset of the mask
 }
 
 export type TabType = 'html' | 'css' | 'raw';
@@ -22,4 +25,10 @@ export interface ProcessedImage {
   processedSize: number;
   width: number;
   height: number;
+}
+
+export interface HistoryItem {
+  processedImage: ProcessedImage | null;
+  settings: ImageSettings;
+  file: File | null;
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wand2, Loader2 } from 'lucide-react';
+import { Wand2, Loader2, Sparkles } from 'lucide-react';
 
 interface AIPromptBarProps {
   onGenerate: (prompt: string) => void;
@@ -18,41 +18,35 @@ const AIPromptBar: React.FC<AIPromptBarProps> = ({ onGenerate, isProcessing, has
   };
 
   return (
-    <div className={`space-y-2 animate-in slide-in-from-bottom-4 duration-500 transition-opacity ${hasImage ? 'opacity-100' : 'opacity-60 grayscale'}`}>
-      <label className="block text-xs font-mono text-zinc-400 uppercase tracking-widest pl-2">
-        Ai PICoder editing by prompt:
+    <div className={`space-y-2 animate-in slide-in-from-bottom-4 duration-500 transition-opacity ${hasImage ? 'opacity-100' : 'opacity-40 grayscale pointer-events-none'}`}>
+      <label className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-widest pl-2 mb-2">
+        <Sparkles size={12} /> AI Magic Editor
       </label>
       
       <form onSubmit={handleSubmit} className="flex items-stretch gap-3">
-        {/* Input Container */}
-        <div className="flex-1 bg-zinc-900/40 border border-white/5 rounded-[1.5rem] p-1.5 backdrop-blur-xl shadow-lg relative overflow-hidden group focus-within:border-zinc-500/30 transition-colors">
-          <div className="flex items-center gap-2 relative z-10">
-            <div className="pl-4 pr-2 text-zinc-500 group-focus-within:text-zinc-200 transition-colors">
-              <Wand2 size={20} className={isProcessing ? "animate-spin" : ""} />
-            </div>
-            
-            <input 
-              type="text" 
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder={hasImage ? "Describe changes (e.g., 'Make it cyberpunk')..." : "Please upload an image first..."}
-              className="flex-1 bg-transparent border-none text-zinc-200 placeholder-zinc-600 text-sm focus:ring-0 focus:outline-none py-3 font-mono"
-              disabled={isProcessing || !hasImage}
-            />
-          </div>
-        </div>
-
-        {/* External Send Button - Right Side */}
+        {/* Send Button - High Contrast Gradient */}
         <button 
           type="submit"
           disabled={!prompt.trim() || isProcessing || !hasImage}
-          className={`w-14 rounded-[1.5rem] transition-all duration-300 flex items-center justify-center font-bold text-xl border border-white/5
-            ${!prompt.trim() || isProcessing || !hasImage
-              ? 'bg-zinc-900/40 text-zinc-700 cursor-not-allowed' 
-              : 'bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 hover:border-zinc-600 shadow-lg active:scale-95'}`}
+          className={`w-16 flex-shrink-0 rounded-2xl transition-all duration-300 flex items-center justify-center border
+            ${!prompt.trim() || isProcessing
+              ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed' 
+              : 'bg-gradient-to-br from-emerald-500 to-cyan-600 border-emerald-400/50 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:scale-105 active:scale-95'}`}
         >
-          {isProcessing ? <Loader2 size={20} className="animate-spin" /> : <span className="pb-1">☬</span>}
+          {isProcessing ? <Loader2 size={24} className="animate-spin" /> : <Wand2 size={24} />}
         </button>
+
+        {/* Input Container - Deep Dark Inset */}
+        <div className="flex-1 bg-[#050505] border border-zinc-800 rounded-2xl p-1 shadow-inner group focus-within:border-emerald-500/50 focus-within:shadow-[0_0_20px_rgba(16,185,129,0.1)] transition-all">
+          <input 
+            type="text" 
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder={hasImage ? "Ex: Remove background, make it cyberpunk..." : "Upload an image to start AI..."}
+            className="w-full h-full bg-transparent border-none text-zinc-200 placeholder-zinc-600 px-4 text-sm focus:ring-0 focus:outline-none font-medium"
+            disabled={isProcessing || !hasImage}
+          />
+        </div>
       </form>
     </div>
   );

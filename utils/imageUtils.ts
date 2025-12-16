@@ -17,7 +17,6 @@ export const processImage = (file: Blob, settings: ImageSettings): Promise<strin
         }
 
         // 1. Calculate Logical Dimensions based on Rotation
-        // Normalize rotation to 0-360 positive
         const normalizedRotation = ((settings.rotation % 360) + 360) % 360;
         const isRotated90or270 = normalizedRotation === 90 || normalizedRotation === 270;
         
@@ -50,11 +49,7 @@ export const processImage = (file: Blob, settings: ImageSettings): Promise<strin
         // Apply Rotation
         ctx.rotate((settings.rotation * Math.PI) / 180);
         
-        // Apply Flip (Scale)
-        // Note: Scale happens *before* drawing the image, but relative to the rotated axes?
-        // To behave intuitively (flip relative to screen), we might need to adjust based on rotation.
-        // However, standard image editors usually apply transformations in order.
-        // Let's stick to Local Transform: Flip applies to the image content itself.
+        // Apply Flip
         ctx.scale(settings.flipH ? -1 : 1, settings.flipV ? -1 : 1);
         
         // Calculate draw dimensions (inverse of scale factor)
@@ -66,19 +61,34 @@ export const processImage = (file: Blob, settings: ImageSettings): Promise<strin
         ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
         ctx.restore();
 
-        // 5. Apply Masking (Crop)
+        // 5. Apply Masking (Interactive Crop)
         if (settings.mask !== 'none') {
+          // Use 'destination-in' to keep only the part of the image inside the mask
           ctx.globalCompositeOperation = 'destination-in';
           ctx.beginPath();
           
+          // Calculate Center Point with user offset
+          const centerX = (canvas.width / 2) + settings.maskX;
+          const centerY = (canvas.height / 2) + settings.maskY;
+          
+          // Calculate Size with user zoom
+          const baseSize = Math.min(canvas.width, canvas.height);
+          const maskScale = settings.maskZoom || 1; 
+
           if (settings.mask === 'circle') {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = Math.min(canvas.width, canvas.height) / 2;
-            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+             const radius = (baseSize / 2) * maskScale;
+             ctx.arc(centerX, centerY, Math.max(0, radius), 0, Math.PI * 2);
           } else if (settings.mask === 'rounded') {
-            const radius = (Math.min(canvas.width, canvas.height) * settings.borderRadius) / 200; // 0-50%
-            ctx.roundRect(0, 0, canvas.width, canvas.height, radius);
+             // Calculate dims based on scale
+             const w = canvas.width * maskScale;
+             const h = canvas.height * maskScale;
+             
+             // Top left relative to offset center
+             const x = centerX - (w / 2);
+             const y = centerY - (h / 2);
+             
+             const radius = (Math.min(w, h) * settings.borderRadius) / 200; // 0-50%
+             ctx.roundRect(x, y, w, h, radius);
           }
           
           ctx.fill();
